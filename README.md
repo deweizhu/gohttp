@@ -15,17 +15,17 @@ func DownloadTest() {
     sUrl := "https://dl.google.com/go/go1.18.4.windows-amd64.msi"
     dest := "d:\\downloads\\go1.18.4.windows-amd64.msi"
     
-    cli := NewClient()
+    cli := gohttp.NewClient()
     resp, err := cli.FastGet(sUrl,
-                Options{
+            gohttp.Options{
                 Timeout: 0,
                 //Concurrency: 4,
                 Headers: map[string]interface{}{
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47",
+                "user-agent": "netdisk;3.0.0.112",
                 },
-                DestFile: dest})
+            DestFile: dest})
     if err != nil {
-    log.Fatalln(err)
+        log.Fatalln(err)
     }
     fmt.Printf("%T", resp)
 }
