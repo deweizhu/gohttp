@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -123,41 +122,37 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 
 func (r *Request) do() (*Response, error) {
 	_resp, err := r.cli.Do(r.req)
+	defer _resp.Body.Close()
 	resp := &Response{
 		resp: _resp,
 		req:  r.req,
 		err:  err,
 	}
-
-	if err == nil {
-		if r.opts.DestFile != "" {
-			dl := &Download{
-				startedAt: time.Now(),
-				ctx:       context.Background(),
-				mutex:     new(sync.RWMutex),
-				info: &Info{
-					Size:      uint64(_resp.ContentLength),
-					Rangeable: false,
-				},
-				Dest: r.opts.DestFile,
-			}
-			_, err := resp.dlFile(dl)
-			resp.err = err
-		} else {
-			body, err := ioutil.ReadAll(_resp.Body)
-			_resp.Body.Close()
-			resp.body = body
-			resp.err = err
-		}
-	}
-
-	if err != nil {
+	if err != nil || _resp.StatusCode != http.StatusOK {
 		if r.opts.Debug {
 			// print response err
 			fmt.Println(err)
 		}
-
 		return resp, err
+	}
+
+	if r.opts.DestFile != "" {
+		dl := &Download{
+			startedAt: time.Now(),
+			ctx:       context.Background(),
+			mutex:     new(sync.RWMutex),
+			info: &Info{
+				Size:      uint64(_resp.ContentLength),
+				Rangeable: false,
+			},
+			Dest: r.opts.DestFile,
+		}
+		_, err := resp.dlFile(dl)
+		resp.err = err
+	} else {
+		body, err := io.ReadAll(_resp.Body)
+		resp.body = body
+		resp.err = err
 	}
 
 	if r.opts.Debug {
@@ -169,6 +164,10 @@ func (r *Request) do() (*Response, error) {
 }
 
 func (r *Request) parseOptions() {
+	// default timeout 30s
+	//if r.opts.Timeout == 0 {
+	//	r.opts.Timeout = 30
+	//}
 	r.opts.timeout = time.Duration(r.opts.Timeout*1000) * time.Millisecond
 }
 
@@ -271,7 +270,7 @@ func (r *Request) parseCookieFile() {
 		}
 		if "cookie" == strings.ToLower(k) {
 			r.req.Header.Add("Cookie", v)
-		} else if "user-agent" == strings.ToLower(v) {
+		} else if "user-agent" == strings.ToLower(k) {
 			r.req.Header.Set("User-Agent", v)
 		} else {
 			r.req.Header.Set(k, v)

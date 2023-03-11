@@ -16,6 +16,15 @@ import (
 func (r *Request) FastGet(uri string, opts ...Options) (resp *Response, err error) {
 	if len(opts) > 0 {
 		r.opts = opts[0]
+		if !opts[0].Overwrite {
+			fi, err := os.Stat(opts[0].DestFile)
+			if err == nil && fi.Size() > 0 {
+				return nil, nil
+			}
+		}
+		if opts[0].Concurrency == 1 {
+			return Get(uri, opts...)
+		}
 	}
 	ctx := context.Background()
 	d := &Download{
@@ -97,16 +106,16 @@ func (d *Download) ChunkInit() (err error) {
 // If the server supports range requests, then we'll extract the length info from content-range,
 // Otherwise this just downloads the whole file in one go
 func (d *Download) GetInfoOrDownload() (*Info, error) {
-	r := NewClient()
 	if d.opts.Headers == nil {
 		d.opts.Headers = make(map[string]interface{})
 	}
 	d.opts.Headers["Range"] = "bytes=0-0"
+	r := NewClient()
 	r.Request("GET", d.URL, d.opts)
-	info := &Info{}
 	_resp, err := r.cli.Do(r.req)
 	defer _resp.Body.Close()
 
+	info := &Info{}
 	if _resp.ContentLength > 0 {
 		atomic.StoreUint64(&info.Size, uint64(_resp.ContentLength))
 	}
@@ -228,13 +237,14 @@ func (d *Download) dl(dest io.WriterAt, errC chan error) {
 
 // DownloadChunk downloads a file chunk.
 func (d *Download) DownloadChunk(c *Chunk, dest io.Writer) error {
-	r := NewClient()
 	contentRange := fmt.Sprintf("bytes=%d-%d", c.Start, c.End)
 	d.mutex.Lock()
 	d.opts.Headers["Range"] = contentRange
-	d.mutex.Unlock()
+	r := NewClient()
 	r.Request("GET", d.URL, d.opts)
+	d.mutex.Unlock()
 	resp, err := r.cli.Do(r.req)
+	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
@@ -245,7 +255,6 @@ func (d *Download) DownloadChunk(c *Chunk, dest io.Writer) error {
 			resp.ContentLength, contentRange,
 		)
 	}
-	defer resp.Body.Close()
 	_, err = io.CopyN(dest, io.TeeReader(resp.Body, d), resp.ContentLength)
 	return err
 }

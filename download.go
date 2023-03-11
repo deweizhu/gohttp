@@ -98,23 +98,17 @@ func (d *Download) IsRangeable() bool {
 func (r *Response) dlFile(d *Download) (size int64, err error) {
 	var destTemp = fmt.Sprintf("%s.downloading", d.Dest)
 	file, err := os.Create(destTemp)
+	defer os.Rename(destTemp, d.Dest)
+	defer file.Close()
 	if err != nil {
 		return
 	}
-	defer func() {
-		err = file.Close()
-		if err == nil {
-			os.Rename(destTemp, d.Dest)
-		}
-	}()
-
 	defer func(d *Download) {
-		_ = r.resp.Body.Close()
 		d.StopProgress = true
 		fmt.Fprintf(os.Stdout, "\r100%%[================================================>]  %s/%s  %s/s    in %s", ByteUnitString(int64(d.Size())),
 			ByteUnitString(int64(d.TotalSize())), ByteUnitString(int64(d.AvgSpeed())), d.TotalCost())
 		fmt.Println()
-		log.Printf("Save as  %s  (%s)\n", d.Dest, ByteUnitString(size))
+		log.Printf("save as  %s  (%s)\n", d.Dest, ByteUnitString(size))
 	}(d)
 
 	// Allocate the file completely so that we can write concurrently

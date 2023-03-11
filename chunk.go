@@ -42,19 +42,7 @@ func (d *Download) Path() string {
 }
 
 func getDefaultConcurrency() uint {
-
-	c := uint(runtime.NumCPU() * 3)
-
-	// Set default max concurrency to 20.
-	if c > 20 {
-		c = 20
-	}
-
-	// Set default min concurrency to 4.
-	if c <= 2 {
-		c = 4
-	}
-
+	c := uint(runtime.NumCPU() * 2)
 	return c
 }
 

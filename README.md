@@ -1,56 +1,4 @@
-# gohttp
-gohttp 实现的类似wget/curl多线程下载
-
-
-## 多线程下载
-
-```go
-import (
-"fmt"
-"github.com/deweizhu/gohttp"
-"log"
-)
-
-func DownloadTest() {
-    sUrl := "https://dl.google.com/go/go1.18.4.windows-amd64.msi"
-    dest := "d:\\downloads\\go1.18.4.windows-amd64.msi"
-    
-    cli := gohttp.NewClient()
-    resp, err := cli.FastGet(sUrl,
-            gohttp.Options{
-                Timeout: 0,
-                //Concurrency: 4,
-                Headers: map[string]interface{}{
-                "user-agent": "netdisk;3.0.0.112",
-                },
-            DestFile: dest})
-    if err != nil {
-        log.Fatalln(err)
-    }
-    fmt.Printf("%T", resp)
-}
-
-
-```
-## 单线程下载 
-
-```go
-sUrl := "https://golang.google.cn/dl/go1.18.4.windows-amd64.msi"
-dest := "d:\\downloads\\go1.18.4.windows-amd64.msi"
-cli := gohttp.NewClient()
-resp, err := cli.Get(sUrl,
-	gohttp.Options{
-		DestFile:    dest})
-if err != nil {
-	log.Fatalln(err)
-}
-fmt.Printf("%T", resp)
-
-
-```
-
-
-## Get
+## Basic Usage
 
 ```go
 cli := gohttp.NewClient()
@@ -70,7 +18,7 @@ fmt.Printf("%T", resp)
 ```go
 cli := gohttp.NewClient()
 
-resp, err := cli.Get("http://127.0.0.1:4000/get-with-query", gohttp.Options{
+resp, err := cli.Get("http://127.0.0.1:8091/get-with-query", gohttp.Options{
 Query: map[string]interface{}{
 "key1": "value1",
 "key2": []string{"value21", "value22"},
@@ -90,7 +38,7 @@ fmt.Printf("%s", resp.GetRequest().URL.RawQuery)
 ```go
 cli := gohttp.NewClient()
 
-resp, err := cli.Get("http://127.0.0.1:4000/get-with-query?key0=value0", gohttp.Options{
+resp, err := cli.Get("http://127.0.0.1:8091/get-with-query?key0=value0", gohttp.Options{
 Query: "key1=value1&key2=value21&key2=value22&key3=333",
 })
 if err != nil {
@@ -108,7 +56,7 @@ fmt.Printf("%s", resp.GetRequest().URL.RawQuery)
 ```go
 cli := gohttp.NewClient()
 
-resp, err := cli.Post("http://127.0.0.1:4000/post-with-form-params", gohttp.Options{
+resp, err := cli.Post("http://127.0.0.1:8091/post-with-form-params", gohttp.Options{
 Headers: map[string]interface{}{
 "Content-Type": "application/x-www-form-urlencoded",
 },
@@ -132,7 +80,7 @@ fmt.Println(body)
 ```go
 cli := gohttp.NewClient()
 
-resp, err := cli.Post("http://127.0.0.1:4000/post-with-json", gohttp.Options{
+resp, err := cli.Post("http://127.0.0.1:8091/post-with-json", gohttp.Options{
 Headers: map[string]interface{}{
 "Content-Type": "application/json",
 },
@@ -156,7 +104,7 @@ fmt.Println(body)
 ```go
 cli := gohttp.NewClient()
 
-resp, err := cli.Post("http://127.0.0.1:4000/post-with-headers", gohttp.Options{
+resp, err := cli.Post("http://127.0.0.1:8091/post-with-headers", gohttp.Options{
 Headers: map[string]interface{}{
 "User-Agent": "testing/1.0",
 "Accept":     "application/json",
@@ -176,7 +124,7 @@ fmt.Println(headers)
 
 ```go
 cli := gohttp.NewClient()
-resp, err := cli.Get("http://127.0.0.1:4000/get")
+resp, err := cli.Get("http://127.0.0.1:8091/get")
 if err != nil {
 log.Fatalln(err)
 }
@@ -219,7 +167,22 @@ fmt.Printf("%T", headerLine)
 // Output: string
 ```
 
+## Proxy
 
+```go
+cli := gohttp.NewClient()
+
+resp, err := cli.Get("https://www.fbisb.com/ip.php", gohttp.Options{
+Timeout: 5.0,
+Proxy:   "http://127.0.0.1:1087",
+})
+if err != nil {
+log.Fatalln(err)
+}
+
+fmt.Println(resp.GetStatusCode())
+// Output: 200
+```
 
 ## Timeout
 
@@ -227,7 +190,7 @@ fmt.Printf("%T", headerLine)
 cli := gohttp.NewClient(gohttp.Options{
 Timeout: 0.9,
 })
-resp, err := cli.Get("http://127.0.0.1:4000/get-timeout")
+resp, err := cli.Get("http://127.0.0.1:8091/get-timeout")
 if err != nil {
 if resp.IsTimeout() {
 fmt.Println("timeout")
@@ -238,5 +201,6 @@ return
 
 fmt.Println("not timeout")
 ```
+
 
 

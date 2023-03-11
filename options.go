@@ -22,4 +22,5 @@ type Options struct {
 	XML         interface{}
 	Proxy       string
 	DestFile    string //保存到本地文件
+	Overwrite   bool   //覆蓋文件
 }
