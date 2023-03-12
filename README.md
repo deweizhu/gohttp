@@ -1,7 +1,7 @@
 ## 用法示例
 
 ```go
-package gohttp
+package main
 
 import (
 	"fmt"
