@@ -1,4 +1,5 @@
 ## 用法示例
+gohttp 实现的类似wget/curl多线程下载   
 
 ```go
 package main
@@ -30,10 +31,10 @@ func examplePostWithQuery() {
 			"token":        "xxxx-xxxx-xxxx-xxxx",
 		},
 		JSON: struct {
-			Key1 string   `json:"key1"`
-			Key2 []string `json:"key2"`
-			Key3 int      `json:"key3"`
-		}{"value1", []string{"value21", "value22"}, 333},
+			Key1 string   `json:"name"`
+			Key2 []string `json:"data"`
+			Key3 int      `json:"page"`
+		}{"name", []string{"data1", "data2"}, 100},
 	})
 	if err != nil {
 		log.Fatalln(err)
