@@ -55,6 +55,7 @@ func exampleProxy() {
 	fmt.Println(resp.GetStatusCode())
 }
 
+//gohttp 实现的类似wget/curl多线程下载
 func exampleDownloader() {
 	sUrl := "https://dl.google.com/go/go1.18.4.windows-amd64.msi"
 	dest := "d:\\downloads\\go1.18.4.windows-amd64.msi"
