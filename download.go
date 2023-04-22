@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -96,6 +95,9 @@ func (d *Download) IsRangeable() bool {
 }
 
 func (r *Response) dlFile(d *Download) (size int64, err error) {
+	defer func(d *Download) {
+		d.StopProgress = true
+	}(d)
 	var destTemp = fmt.Sprintf("%s.downloading", d.Dest)
 	file, err := os.Create(destTemp)
 	defer os.Rename(destTemp, d.Dest)
@@ -103,47 +105,24 @@ func (r *Response) dlFile(d *Download) (size int64, err error) {
 	if err != nil {
 		return
 	}
-	defer func(d *Download) {
-		d.StopProgress = true
-		fmt.Fprintf(os.Stdout, "\r100%%[================================================>]  %s/%s  %s/s    in %s", ByteUnitString(int64(d.Size())),
-			ByteUnitString(int64(d.TotalSize())), ByteUnitString(int64(d.AvgSpeed())), d.TotalCost())
-		fmt.Println()
-		log.Printf("save as  %s  (%s)\n", d.Dest, ByteUnitString(size))
-	}(d)
-
 	// Allocate the file completely so that we can write concurrently
 	file.Truncate(r.resp.ContentLength)
-
-	go dlProgressBar(d)
-
 	size, err = io.Copy(file, io.TeeReader(r.resp.Body, d))
 	return
 }
-func dlProgressBar(d *Download) {
+func dlProgressBar(wg *sync.WaitGroup, d *Download) {
+	defer wg.Done()
 	// Set default interval.
 	if d.Interval == 0 {
 		d.Interval = uint64(400 / runtime.NumCPU())
 	}
 	sleepd := time.Duration(d.Interval) * time.Millisecond
 	for {
-		if d.StopProgress {
-			break
-		}
-		// Context check.
-		select {
-		case <-d.ctx.Done():
-			return
-		default:
-		}
-
 		// Run progress func.
 		if d.TotalSize() <= 0 {
 			return
 		}
 		pd := d.Size() * 100 / d.TotalSize()
-		if pd == 100 {
-			return
-		}
 		speed := "="
 		max := int(pd)
 		for k := 0; k < max; k += 2 {
@@ -159,6 +138,17 @@ func dlProgressBar(d *Download) {
 
 		// Update last size
 		atomic.StoreUint64(&d.lastSize, atomic.LoadUint64(&d.size))
+		//stop
+		if pd == 100 || d.StopProgress {
+			d.StopProgress = true
+			break
+		}
+		// Context check.
+		select {
+		case <-d.ctx.Done():
+			return
+		default:
+		}
 		// Interval.
 		time.Sleep(sleepd)
 	}

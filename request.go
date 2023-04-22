@@ -147,7 +147,12 @@ func (r *Request) do() (*Response, error) {
 			},
 			Dest: r.opts.DestFile,
 		}
+		// Wait group.
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go dlProgressBar(&wg, dl)
 		_, err := resp.dlFile(dl)
+		wg.Wait()
 		resp.err = err
 	} else {
 		body, err := io.ReadAll(_resp.Body)

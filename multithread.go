@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -39,9 +38,7 @@ func (r *Request) FastGet(uri string, opts ...Options) (resp *Response, err erro
 	if err = d.ChunkInit(); err != nil {
 		return nil, err
 	}
-	go d.RunProgress()
 	err = d.ChunkStart()
-
 	resp = &Response{
 		resp: nil,
 		req:  r.req,
@@ -196,7 +193,6 @@ func (d *Download) ChunkStart() (err error) {
 	case <-d.ctx.Done():
 		err = d.ctx.Err()
 	}
-
 	return
 }
 
@@ -213,6 +209,9 @@ func (d *Download) dl(dest io.WriterAt, errC chan error) {
 	if d.opts.Headers == nil {
 		d.opts.Headers = make(map[string]interface{})
 	}
+	wg.Add(1)
+	go dlProgressBar(&wg, d)
+
 	for i := 0; i < len(d.chunks); i++ {
 
 		max <- 1
@@ -262,33 +261,33 @@ func (d *Download) DownloadChunk(c *Chunk, dest io.Writer) error {
 // RunProgress runs ProgressFunc based on Interval and updates lastSize.
 func (d *Download) RunProgress() {
 
-	// Set default interval.
-	if d.Interval == 0 {
-		d.Interval = uint64(400 / runtime.NumCPU())
-	}
+	//// Set default interval.
+	//if d.Interval == 0 {
+	//	d.Interval = uint64(400 / runtime.NumCPU())
+	//}
+	//
+	//sleepd := time.Duration(d.Interval) * time.Millisecond
 
-	sleepd := time.Duration(d.Interval) * time.Millisecond
-
-	for {
-
-		if d.StopProgress {
-			break
-		}
-
-		// Context check.
-		select {
-		case <-d.ctx.Done():
-			return
-		default:
-		}
-
-		// Run progress func.
-		dlProgressBar(d)
-
-		// Update last size
-		atomic.StoreUint64(&d.lastSize, atomic.LoadUint64(&d.size))
-
-		// Interval.
-		time.Sleep(sleepd)
-	}
+	//for {
+	//
+	//	if d.StopProgress {
+	//		break
+	//	}
+	//
+	//	// Context check.
+	//	select {
+	//	case <-d.ctx.Done():
+	//		return
+	//	default:
+	//	}
+	//
+	//	// Run progress func.
+	//	dlProgressBar(&wg, d)
+	//
+	//	// Update last size
+	//	atomic.StoreUint64(&d.lastSize, atomic.LoadUint64(&d.size))
+	//
+	//	// Interval.
+	//	time.Sleep(sleepd)
+	//}
 }
