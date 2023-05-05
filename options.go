@@ -19,6 +19,7 @@ type Options struct {
 	CookieJar   *cookiejar.Jar
 	FormParams  map[string]interface{}
 	JSON        interface{}
+	Body        []byte
 	XML         interface{}
 	Proxy       string
 	DestFile    string //保存到本地文件

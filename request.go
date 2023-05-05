@@ -335,5 +335,9 @@ func (r *Request) parseBody() {
 			return
 		}
 	}
+	// []byte
+	if r.opts.Body != nil {
+		r.body = bytes.NewReader(r.opts.Body)
+	}
 	return
 }
