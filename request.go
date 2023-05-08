@@ -20,6 +20,7 @@ import (
 
 // Request object
 type Request struct {
+	ctx  context.Context
 	opts Options
 	cli  *http.Client
 	req  *http.Request
@@ -67,7 +68,6 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 	if len(opts) > 0 {
 		r.opts = opts[0]
 	}
-
 	if r.opts.Headers == nil {
 		r.opts.Headers = make(map[string]interface{})
 	}
@@ -78,7 +78,7 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 		if err != nil {
 			return nil, err
 		}
-
+		req.WithContext(r.ctx)
 		r.req = req
 	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodOptions:
 		// parse body
@@ -88,7 +88,7 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 		if err != nil {
 			return nil, err
 		}
-
+		req.WithContext(r.ctx)
 		r.req = req
 	default:
 		return nil, errors.New("invalid request method")
@@ -122,6 +122,9 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 
 func (r *Request) do() (*Response, error) {
 	_resp, err := r.cli.Do(r.req)
+	if _resp == nil || _resp.Body == nil {
+		return nil, err
+	}
 	defer _resp.Body.Close()
 	resp := &Response{
 		resp: _resp,

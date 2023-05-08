@@ -11,7 +11,8 @@ import (
 )
 
 func exampleGet() {
-	cli := gohttp.NewClient()
+	ctx := context.Background()
+	cli := gohttp.NewClient(ctx)
 	resp, err := cli.Get("https://cn.bing.com/search", gohttp.Options{
 		Query: "q=bookget&form=gohttp",
 	})
@@ -23,7 +24,8 @@ func exampleGet() {
 }
 
 func examplePostWithQuery() {
-	cli := gohttp.NewClient()
+	ctx := context.Background()
+	cli := gohttp.NewClient(ctx)
 	resp, err := cli.Post("http://127.0.0.1:5000/", gohttp.Options{
 		Headers: map[string]interface{}{
 			"Content-Type": "application/json",
@@ -45,7 +47,8 @@ func examplePostWithQuery() {
 }
 
 func exampleProxy() {
-	cli := gohttp.NewClient()
+	ctx := context.Background()
+	cli := gohttp.NewClient(ctx)
 	resp, err := cli.Get("https://ip.cn/api/index?ip=&type=0", gohttp.Options{
 		Timeout: 5.0,
 		Proxy:   "http://127.0.0.1:4000",
@@ -60,7 +63,8 @@ func exampleProxy() {
 func exampleDownloader() {
 	sUrl := "https://dl.google.com/go/go1.18.4.windows-amd64.msi"
 	dest := "d:\\downloads\\go1.18.4.windows-amd64.msi"
-	cli := gohttp.NewClient()
+	ctx := context.Background()
+	cli := gohttp.NewClient(ctx)
 	resp, err := cli.FastGet(sUrl,
 		gohttp.Options{
 			Timeout: 0,

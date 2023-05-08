@@ -22,12 +22,11 @@ func (r *Request) FastGet(uri string, opts ...Options) (resp *Response, err erro
 			}
 		}
 		if opts[0].Concurrency == 1 {
-			return Get(uri, opts...)
+			return Get(r.ctx, uri, opts...)
 		}
 	}
-	ctx := context.Background()
 	d := &Download{
-		ctx:         ctx,
+		ctx:         r.ctx,
 		URL:         uri,
 		Dest:        r.opts.DestFile,
 		opts:        r.opts,
@@ -107,7 +106,7 @@ func (d *Download) GetInfoOrDownload() (*Info, error) {
 		d.opts.Headers = make(map[string]interface{})
 	}
 	d.opts.Headers["Range"] = "bytes=0-0"
-	r := NewClient()
+	r := NewClient(d.ctx)
 	r.Request("GET", d.URL, d.opts)
 	_resp, err := r.cli.Do(r.req)
 	defer _resp.Body.Close()
@@ -239,7 +238,7 @@ func (d *Download) DownloadChunk(c *Chunk, dest io.Writer) error {
 	contentRange := fmt.Sprintf("bytes=%d-%d", c.Start, c.End)
 	d.mutex.Lock()
 	d.opts.Headers["Range"] = contentRange
-	r := NewClient()
+	r := NewClient(d.ctx)
 	r.Request("GET", d.URL, d.opts)
 	d.mutex.Unlock()
 	resp, err := r.cli.Do(r.req)
